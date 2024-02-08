@@ -54,7 +54,7 @@ public class BoardController {
         request.setAttribute("prevPage", prevPage);
 
         boolean first = PagingUtil.isFirst(currentPage);
-        boolean last = PagingUtil.isLast(currentPage, 5);
+        boolean last = PagingUtil.isLast(currentPage, 6);
 
         request.setAttribute("first", first);
         request.setAttribute("last", last);
