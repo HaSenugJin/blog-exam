@@ -1,16 +1,65 @@
 package shop.mtcoding.blog.board;
 
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import shop.mtcoding.blog._core.PagingUtil;
 
+import java.util.List;
+
+@RequiredArgsConstructor
 @Controller
 public class BoardController {
 
-    @GetMapping("/")
-    public String index() {
+    private final BoardRepository boardRepository;
+
+    @PostMapping("/board/{id}/update")
+    public String update(@PathVariable int id, BoardRequest.UpdateDTO requestDTO){
+        boardRepository.update(requestDTO, id);
+
+        return "redirect:/";
+    }
+
+    @GetMapping("/board/{id}/updateForm")
+    public String updateForm(@PathVariable int id, HttpServletRequest request) {
+        Board board = boardRepository.findById(id);
+
+        request.setAttribute("board", board);
+
+        return "board/updateForm";
+    }
+
+    @PostMapping("/board/{id}/delete")
+    public String detail(@PathVariable int id) {
+
+        boardRepository.deleteById(id);
+
+        return "redirect:/";
+    }
+
+    @GetMapping({ "/", "/board" })
+    public String index(HttpServletRequest request, @RequestParam(defaultValue = "0") int page) {
+
+        List<Board> boardList = boardRepository.findAll(page);
+        request.setAttribute("boardList", boardList);
+
+        int currentPage = page;
+        int nextPage = currentPage + 1;
+        int prevPage = currentPage - 1;
+        request.setAttribute("nextPage", nextPage);
+        request.setAttribute("prevPage", prevPage);
+
+        boolean first = PagingUtil.isFirst(currentPage);
+        boolean last = PagingUtil.isLast(currentPage, 5);
+
+        request.setAttribute("first", first);
+        request.setAttribute("last", last);
+
+
         return "index";
     }
 
@@ -19,23 +68,32 @@ public class BoardController {
         return "board/saveForm";
     }
 
-    @GetMapping("/board/{id}/updateForm")
-    public String updateForm(@PathVariable int id) {
-        return "board/updateForm";
-    }
-
     @PostMapping("/board/save")
-    public String save(){
+    public String save(BoardRequest.SaveDTO requestDTO, HttpServletRequest request){
+        System.out.println(requestDTO);
+
+        if (requestDTO.getAuthor().length() > 10) {
+            request.setAttribute("status", 400);
+            request.setAttribute("msg", "작성자의 길이가 10자를 초과해서는 안됩니다.");
+            return "error/40x";
+        }
+
+        if (requestDTO.getTitle().length() > 20) {
+            request.setAttribute("status", 400);
+            request.setAttribute("msg", "제목의 길이가 20자를 초과해서는 안됩니다.");
+            return "error/40x";
+        }
+
+        if (requestDTO.getContent().length() > 20) {
+            request.setAttribute("status", 400);
+            request.setAttribute("msg", "내용의 길이가 20자를 초과해서는 안됩니다.");
+            return "error/40x";
+        }
+
+        boardRepository.save(requestDTO);
+
         return "redirect:/";
     }
 
-    @PostMapping("/board/{id}/update")
-    public String update(@PathVariable int id){
-        return "redirect:/";
-    }
 
-    @PostMapping("/board/{id}/delete")
-    public String delete(@PathVariable int id){
-        return "redirect:/";
-    }
 }
